@@ -1,0 +1,113 @@
+﻿@{
+    ViewBag.Title = "Default";
+}
+
+<h2>Online Base64 Encoder/Decoder</h2>
+<div class="notice hide" id="ax"></div>
+<div class="clearfix">
+    <textarea id="usrString" placeholder="Put your input string here" cols="80" rows="40"></textarea>
+    <button class="small blue" id="encoder">Encode</button>
+    <button class="small blue" id="decoder">Decode</button>
+</div>
+<div id="output" class="hide"></div>
+
+@section scripts {
+<script type="text/javascript">
+
+    /// Module Pattern
+    var base64 = (function () {
+        var serviceUrl = '@Url.RouteUrl("Default",new {httproute="",controller="base64"})';
+        $(document).ajaxError(function (event, xhr) {
+            $('#ax').addClass("error").removeClass("hide").text(xhr.status + ":" + xhr.statusText);
+        });
+        // Private Methods
+        var encode = function (x) {
+            return $.ajax(serviceUrl+"/encode",{
+                type:"POST",
+                data: {input:x} //Even if it's a single string post it must be tagged!
+            });
+        };
+        var decode = function (x) {
+            return $.ajax(serviceUrl + "/decode", {
+                type: "POST",
+                data: { input: x } //Even if it's a single string post it must be tagged!
+            });
+        };
+
+        // Module Pattern Revealed Properties
+
+        return {
+            encode: encode,
+            decode: decode
+        };
+
+    }());
+
+    var execEncode = function () {
+        resetButtons();
+        if (!validateInput)
+            return;
+        base64.encode($("#usrString").val()).done(function (data) {
+            if (!data.Result) {
+                $('#ax').addClass("error").removeClass("hide").text(data.Message);
+                $('#encoder').removeClass('blue').addClass('red');
+            }
+            else {
+                $('#usrString').val('');
+                $('#ax').empty().removeClass("error").addClass("hide");
+                $('#encoder').removeClass('blue').addClass('green');
+                $('#output').html('<p>' + data.EncodedString + '</p>').slideDown('slow');
+            }
+        });
+    }
+
+    var execDecode = function () {
+        resetButtons();
+        if (!validateInput)
+            return;
+        base64.decode($("#usrString").val()).done(function (data) {
+            if (!data.Result) {
+                $('#ax').addClass("error").removeClass("hide").text(data.Message);
+                $('#decoder').removeClass('blue').addClass('red');
+            }
+            else {
+                $('#usrString').val('');
+                $('#ax').empty().removeClass("error").addClass("hide");
+                $('#decoder').removeClass('blue').addClass('green');
+                $('#output').html('<p class="column">' + data.DecodedString + '</p>').slideDown('slow');
+            }
+        });
+    }
+
+    var cleanUp = function () {
+        $('#ax').empty().removeClass("error").addClass("hide");
+        $('#output').empty().addClass("hide");
+        resetButtons();
+    }
+
+    var resetButtons = function () {
+        $('button').removeClass().addClass('small').addClass('blue');
+    }
+
+    var validateInput = function () {
+        if ($('#usrString').val().trim() == "" || $('#usrString').val() == $('#usrString').attr('placeholder')) {
+            resetButtons();
+            return false;
+        }
+        return true;
+    }
+
+    var wireEvents = function () {
+        $(document).on("click", "#encoder", execEncode);
+        $(document).on("click", "#decoder", execDecode);
+        $(document).on("keydown", "#usrString", cleanUp);
+    };
+
+    (function () {
+        $(function () { //DOM Ready
+            wireEvents();
+        });
+    }());
+
+</script>
+}
